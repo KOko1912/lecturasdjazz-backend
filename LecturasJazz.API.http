@@ -1,0 +1,6 @@
+@LecturasJazz.API_HostAddress = http://localhost:5176
+
+GET {{LecturasJazz.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
