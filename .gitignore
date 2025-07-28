@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+publish/
+*.zip
+*.log
+*.user
+*.suo
+.env
+.env.*
+appsettings.Development.json
