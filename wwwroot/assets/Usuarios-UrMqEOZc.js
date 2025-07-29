@@ -1,1 +1,0 @@
-import{_ as n,a as s,b as r,e as o}from"./index-BxUUJR0B.js";const t={};function a(c,e){return r(),s("div",null,e[0]||(e[0]=[o("h2",null,"Usuarios Admin (en construcción)",-1)]))}const l=n(t,[["render",a]]);export{l as default};
