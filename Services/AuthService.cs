@@ -1,6 +1,6 @@
 using LecturasJazz.API.Models;
-using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql; // ✅ usa Npgsql
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -23,8 +23,8 @@ namespace LecturasJazz.API.Services
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
-                using var command = new SqlCommand("INSERT INTO Usuarios (Nombre, Telefono, PasswordHash) VALUES (@Nombre, @Telefono, @PasswordHash)", connection);
+                using var connection = new NpgsqlConnection(_connectionString);
+                using var command = new NpgsqlCommand("INSERT INTO \"Usuarios\" (\"Nombre\", \"Telefono\", \"PasswordHash\") VALUES (@Nombre, @Telefono, @PasswordHash)", connection);
 
                 string hashedPassword = BCrypt.Net.BCrypt.HashPassword(usuario.PasswordHash);
 
@@ -47,8 +47,8 @@ namespace LecturasJazz.API.Services
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
-                using var command = new SqlCommand("UPDATE Usuarios SET FotoUrl = @FotoUrl WHERE Id = @Id", connection);
+                using var connection = new NpgsqlConnection(_connectionString);
+                using var command = new NpgsqlCommand("UPDATE \"Usuarios\" SET \"FotoUrl\" = @FotoUrl WHERE \"Id\" = @Id", connection);
 
                 command.Parameters.AddWithValue("@FotoUrl", rutaRelativa);
                 command.Parameters.AddWithValue("@Id", userId);
@@ -68,8 +68,8 @@ namespace LecturasJazz.API.Services
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
-                using var command = new SqlCommand("SELECT * FROM Usuarios WHERE Telefono = @Telefono", connection);
+                using var connection = new NpgsqlConnection(_connectionString);
+                using var command = new NpgsqlCommand("SELECT * FROM \"Usuarios\" WHERE \"Telefono\" = @Telefono", connection);
                 command.Parameters.AddWithValue("@Telefono", telefono);
 
                 await connection.OpenAsync();
@@ -78,11 +78,11 @@ namespace LecturasJazz.API.Services
                 {
                     var user = new Usuario
                     {
-                        Id = (int)reader["Id"],
-                        Nombre = (string)reader["Nombre"],
-                        Telefono = (string)reader["Telefono"],
-                        PasswordHash = (string)reader["PasswordHash"],
-                        FotoUrl = reader["FotoUrl"] as string
+                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                        Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
+                        Telefono = reader.GetString(reader.GetOrdinal("Telefono")),
+                        PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
+                        FotoUrl = reader.IsDBNull(reader.GetOrdinal("FotoUrl")) ? null : reader.GetString(reader.GetOrdinal("FotoUrl"))
                     };
 
                     if (BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
