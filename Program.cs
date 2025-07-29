@@ -57,7 +57,8 @@ builder.Services.AddCors(options =>
 
 // DB Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 // Controladores y JSON
 builder.Services.AddControllers()
