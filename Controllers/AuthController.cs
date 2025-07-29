@@ -63,25 +63,29 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+public async Task<IActionResult> Login([FromBody] LoginRequest request)
+{
+    if (string.IsNullOrWhiteSpace(request.Telefono) ||
+        string.IsNullOrWhiteSpace(request.Password))
     {
-        if (string.IsNullOrWhiteSpace(request.Telefono) ||
-            string.IsNullOrWhiteSpace(request.Password))
-        {
-            return BadRequest(new { message = "Teléfono y contraseña son requeridos" });
-        }
-
-        var (usuario, token) = await _authService.Login(request.Telefono, request.Password);
-        if (usuario == null || token == null)
-            return Unauthorized(new { message = "Teléfono o contraseña incorrectos" });
-
-        return Ok(new
-        {
-            id = usuario.Id,
-            nombre = usuario.Nombre,
-            telefono = usuario.Telefono,
-            fotoUrl = usuario.FotoUrl,
-            token
-        });
+        return BadRequest(new { message = "Teléfono y contraseña son requeridos" });
     }
+
+    var (usuario, token) = await _authService.Login(request.Telefono, request.Password);
+    if (usuario == null || token == null)
+        return Unauthorized(new { message = "Teléfono o contraseña incorrectos" });
+
+    return Ok(new
+    {
+        usuario = new
+        {
+            usuario.Id,
+            usuario.Nombre,
+            usuario.Telefono,
+            usuario.FotoUrl
+        },
+        token
+    });
+}
+
 }
