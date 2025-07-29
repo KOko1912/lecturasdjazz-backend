@@ -45,6 +45,29 @@ namespace LecturasJazz.API.Services
             }
         }
 
+        public async Task<bool> ActualizarFoto(int userId, string rutaRelativa)
+        {
+            try
+            {
+                using var connection = new NpgsqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var command = new NpgsqlCommand(
+                    @"UPDATE ""Usuarios"" SET ""FotoUrl"" = @FotoUrl WHERE ""Id"" = @Id", connection);
+
+                command.Parameters.AddWithValue("@FotoUrl", rutaRelativa);
+                command.Parameters.AddWithValue("@Id", userId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al actualizar foto: {ex.Message}");
+                return false;
+            }
+        }
+
         public async Task<(Usuario? usuario, string? token)> Login(string telefono, string password)
         {
             try
