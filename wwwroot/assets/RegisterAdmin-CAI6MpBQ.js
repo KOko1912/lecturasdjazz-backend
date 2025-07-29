@@ -1,1 +1,0 @@
-import{l as s,r as e,_ as t}from"./index-l9j5V0RT.js";const r=s({__name:"RegisterAdmin",setup(_){return e(""),e(""),e(""),e(""),()=>{}}}),n=t(r,[["__scopeId","data-v-cbc7450a"]]);export{n as default};
