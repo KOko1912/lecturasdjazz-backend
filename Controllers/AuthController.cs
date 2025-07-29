@@ -4,7 +4,6 @@ using LecturasJazz.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace LecturasJazz.API.Controllers;
 
 [ApiController]
@@ -43,8 +42,8 @@ public class AuthController : ControllerBase
 
         var nuevoUsuario = new Usuario
         {
-            Nombre = request.Nombre,
-            Telefono = request.Telefono,
+            Nombre = request.Nombre!,
+            Telefono = request.Telefono!,
             PasswordHash = request.Password!,
             FotoUrl = null
         };
@@ -53,7 +52,21 @@ public class AuthController : ControllerBase
         if (!creado)
             return StatusCode(500, new { message = "No se pudo registrar el usuario" });
 
-        return Ok(new { message = "Usuario registrado correctamente" });
+        var (usuario, token) = await _authService.Login(request.Telefono!, request.Password!);
+        if (usuario == null || token == null)
+            return StatusCode(500, new { message = "Usuario creado pero no se pudo generar token" });
+
+        return Ok(new
+        {
+            usuario = new
+            {
+                usuario.Id,
+                usuario.Nombre,
+                usuario.Telefono,
+                usuario.FotoUrl
+            },
+            token
+        });
     }
 
     public class LoginRequest
@@ -63,29 +76,32 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-public async Task<IActionResult> Login([FromBody] LoginRequest request)
-{
-    if (string.IsNullOrWhiteSpace(request.Telefono) ||
-        string.IsNullOrWhiteSpace(request.Password))
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        return BadRequest(new { message = "Teléfono y contraseña son requeridos" });
-    }
-
-    var (usuario, token) = await _authService.Login(request.Telefono, request.Password);
-    if (usuario == null || token == null)
-        return Unauthorized(new { message = "Teléfono o contraseña incorrectos" });
-
-    return Ok(new
-    {
-        usuario = new
+        if (string.IsNullOrWhiteSpace(request.Telefono) ||
+            string.IsNullOrWhiteSpace(request.Password))
         {
-            usuario.Id,
-            usuario.Nombre,
-            usuario.Telefono,
-            usuario.FotoUrl
-        },
-        token
-    });
-}
+            return BadRequest(new { message = "Teléfono y contraseña son requeridos" });
+        }
 
+        var (usuario, token) = await _authService.Login(request.Telefono!, request.Password!);
+
+        if (usuario == null || token == null)
+        {
+            Console.WriteLine("❌ Fallo el login: usuario/token null");
+            return Unauthorized(new { message = "Teléfono o contraseña incorrectos" });
+        }
+
+        return Ok(new
+        {
+            usuario = new
+            {
+                usuario.Id,
+                usuario.Nombre,
+                usuario.Telefono,
+                usuario.FotoUrl
+            },
+            token
+        });
+    }
 }
