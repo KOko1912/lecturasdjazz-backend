@@ -77,7 +77,11 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("AllowAll");
 
 app.UseAuthentication(); // 🔐
@@ -113,5 +117,6 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.MapControllers();
 app.MapFallbackToFile("index.html");
+app.Urls.Add("http://0.0.0.0:8080");
 
 app.Run();
