@@ -26,51 +26,49 @@ public class AuthController : ControllerBase
         public string? Password { get; set; }
     }
 
-   [HttpPost("register")]
-public async Task<IActionResult> Register([FromBody] RegisterRequest request)
-{
-    if (string.IsNullOrWhiteSpace(request.Nombre) ||
-        string.IsNullOrWhiteSpace(request.Telefono) ||
-        string.IsNullOrWhiteSpace(request.Password))
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        return BadRequest(new { error = "Todos los campos son obligatorios" });
-    }
-
-    bool exists = await _context.Usuarios.AnyAsync(u => u.Telefono == request.Telefono);
-    if (exists)
-        return BadRequest(new { error = "El teléfono ya está registrado" });
-
-    var nuevoUsuario = new Usuario
-    {
-        Nombre = request.Nombre,
-        Telefono = request.Telefono,
-        PasswordHash = request.Password!,
-        FotoUrl = null
-    };
-
-    bool creado = await _authService.RegistrarUsuario(nuevoUsuario);
-    if (!creado)
-        return StatusCode(500, new { message = "No se pudo registrar el usuario" });
-
-    // ✅ Obtener el usuario recién creado
-    var (usuario, token) = await _authService.Login(request.Telefono!, request.Password!);
-
-    if (usuario == null || token == null)
-        return StatusCode(500, new { message = "Usuario creado, pero no se pudo generar token" });
-
-    return Ok(new
-    {
-        usuario = new
+        if (string.IsNullOrWhiteSpace(request.Nombre) ||
+            string.IsNullOrWhiteSpace(request.Telefono) ||
+            string.IsNullOrWhiteSpace(request.Password))
         {
-            usuario.Id,
-            usuario.Nombre,
-            usuario.Telefono,
-            usuario.FotoUrl
-        },
-        token
-    });
-}
+            return BadRequest(new { error = "Todos los campos son obligatorios" });
+        }
 
+        bool exists = await _context.Usuarios.AnyAsync(u => u.Telefono == request.Telefono);
+        if (exists)
+            return BadRequest(new { error = "El teléfono ya está registrado" });
+
+        var nuevoUsuario = new Usuario
+        {
+            Nombre = request.Nombre,
+            Telefono = request.Telefono,
+            PasswordHash = request.Password!,
+            FotoUrl = null
+        };
+
+        bool creado = await _authService.RegistrarUsuario(nuevoUsuario);
+        if (!creado)
+            return StatusCode(500, new { message = "No se pudo registrar el usuario" });
+
+        // ✅ Intenta iniciar sesión directamente tras crear el usuario
+        var (usuario, token) = await _authService.Login(request.Telefono!, request.Password!);
+        if (usuario == null || token == null)
+            return StatusCode(500, new { message = "Usuario creado, pero no se pudo generar token" });
+
+        return Ok(new
+        {
+            usuario = new
+            {
+                usuario.Id,
+                usuario.Nombre,
+                usuario.Telefono,
+                usuario.FotoUrl
+            },
+            token
+        });
+    }
 
     public class LoginRequest
     {
@@ -87,13 +85,9 @@ public async Task<IActionResult> Register([FromBody] RegisterRequest request)
             return BadRequest(new { message = "Teléfono y contraseña son requeridos" });
         }
 
-        var (usuario, token) = await _authService.Login(request.Telefono!, request.Password!);
-
+        var (usuario, token) = await _authService.Login(request.Telefono, request.Password);
         if (usuario == null || token == null)
-        {
-            Console.WriteLine("❌ Fallo el login: usuario/token null");
             return Unauthorized(new { message = "Teléfono o contraseña incorrectos" });
-        }
 
         return Ok(new
         {
