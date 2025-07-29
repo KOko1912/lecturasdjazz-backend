@@ -1,6 +1,6 @@
 using LecturasJazz.API.Models;
 using Microsoft.IdentityModel.Tokens;
-using Npgsql; // ✅ usa Npgsql
+using Npgsql;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -24,15 +24,18 @@ namespace LecturasJazz.API.Services
             try
             {
                 using var connection = new NpgsqlConnection(_connectionString);
-                using var command = new NpgsqlCommand("INSERT INTO \"Usuarios\" (\"Nombre\", \"Telefono\", \"PasswordHash\") VALUES (@Nombre, @Telefono, @PasswordHash)", connection);
+                await connection.OpenAsync();
 
                 string hashedPassword = BCrypt.Net.BCrypt.HashPassword(usuario.PasswordHash);
+
+                var command = new NpgsqlCommand(@"
+                    INSERT INTO ""Usuarios"" (""Nombre"", ""Telefono"", ""PasswordHash"") 
+                    VALUES (@Nombre, @Telefono, @PasswordHash)", connection);
 
                 command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
                 command.Parameters.AddWithValue("@Telefono", usuario.Telefono);
                 command.Parameters.AddWithValue("@PasswordHash", hashedPassword);
 
-                await connection.OpenAsync();
                 var result = await command.ExecuteNonQueryAsync();
                 return result > 0;
             }
@@ -43,40 +46,23 @@ namespace LecturasJazz.API.Services
             }
         }
 
-        public async Task<bool> ActualizarFoto(int userId, string rutaRelativa)
-        {
-            try
-            {
-                using var connection = new NpgsqlConnection(_connectionString);
-                using var command = new NpgsqlCommand("UPDATE \"Usuarios\" SET \"FotoUrl\" = @FotoUrl WHERE \"Id\" = @Id", connection);
-
-                command.Parameters.AddWithValue("@FotoUrl", rutaRelativa);
-                command.Parameters.AddWithValue("@Id", userId);
-
-                await connection.OpenAsync();
-                var result = await command.ExecuteNonQueryAsync();
-                return result > 0;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error al actualizar foto: {ex.Message}");
-                return false;
-            }
-        }
-
         public async Task<(Usuario? usuario, string? token)> Login(string telefono, string password)
         {
             try
             {
                 using var connection = new NpgsqlConnection(_connectionString);
-                using var command = new NpgsqlCommand("SELECT * FROM \"Usuarios\" WHERE \"Telefono\" = @Telefono", connection);
+                await connection.OpenAsync();
+
+                var command = new NpgsqlCommand(@"
+                    SELECT * FROM ""Usuarios"" 
+                    WHERE ""Telefono"" = @Telefono", connection);
+
                 command.Parameters.AddWithValue("@Telefono", telefono);
 
-                await connection.OpenAsync();
                 using var reader = await command.ExecuteReaderAsync();
                 if (await reader.ReadAsync())
                 {
-                    var user = new Usuario
+                    var usuario = new Usuario
                     {
                         Id = reader.GetInt32(reader.GetOrdinal("Id")),
                         Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
@@ -85,10 +71,15 @@ namespace LecturasJazz.API.Services
                         FotoUrl = reader.IsDBNull(reader.GetOrdinal("FotoUrl")) ? null : reader.GetString(reader.GetOrdinal("FotoUrl"))
                     };
 
-                    if (BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+                    if (BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash))
                     {
-                        var token = GenerarToken(user);
-                        return (user, token);
+                        Console.WriteLine("✅ Contraseña verificada");
+                        string token = GenerarToken(usuario);
+                        return (usuario, token);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"❌ Contraseña incorrecta. Ingresada: {password}, Hash: {usuario.PasswordHash}");
                     }
                 }
 
@@ -98,6 +89,31 @@ namespace LecturasJazz.API.Services
             {
                 Console.WriteLine($"❌ Error en login: {ex.Message}");
                 return (null, null);
+            }
+        }
+
+        public async Task<bool> ActualizarFoto(int userId, string rutaRelativa)
+        {
+            try
+            {
+                using var connection = new NpgsqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var command = new NpgsqlCommand(@"
+                    UPDATE ""Usuarios"" 
+                    SET ""FotoUrl"" = @FotoUrl 
+                    WHERE ""Id"" = @Id", connection);
+
+                command.Parameters.AddWithValue("@FotoUrl", rutaRelativa);
+                command.Parameters.AddWithValue("@Id", userId);
+
+                var result = await command.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al actualizar foto: {ex.Message}");
+                return false;
             }
         }
 
@@ -114,6 +130,7 @@ namespace LecturasJazz.API.Services
             };
 
             var credentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256);
+
             var tokenDescriptor = new JwtSecurityToken(
                 claims: claims,
                 expires: DateTime.UtcNow.AddDays(7),
