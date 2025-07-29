@@ -1,9 +1,10 @@
 using LecturasJazz.API.Models;
 using Microsoft.IdentityModel.Tokens;
-using Npgsql;
+using Npgsql; // ✅ usa Npgsql
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using BCrypt.Net;
 
 namespace LecturasJazz.API.Services
 {
@@ -23,18 +24,15 @@ namespace LecturasJazz.API.Services
             try
             {
                 using var connection = new NpgsqlConnection(_connectionString);
-                await connection.OpenAsync();
+                using var command = new NpgsqlCommand("INSERT INTO \"Usuarios\" (\"Nombre\", \"Telefono\", \"PasswordHash\") VALUES (@Nombre, @Telefono, @PasswordHash)", connection);
 
-                var hashedPassword = BCrypt.Net.BCrypt.HashPassword(usuario.PasswordHash);
-
-                var command = new NpgsqlCommand(@"INSERT INTO ""Usuarios"" 
-                    (""Nombre"", ""Telefono"", ""PasswordHash"") 
-                    VALUES (@Nombre, @Telefono, @PasswordHash)", connection);
+                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(usuario.PasswordHash);
 
                 command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
                 command.Parameters.AddWithValue("@Telefono", usuario.Telefono);
                 command.Parameters.AddWithValue("@PasswordHash", hashedPassword);
 
+                await connection.OpenAsync();
                 var result = await command.ExecuteNonQueryAsync();
                 return result > 0;
             }
@@ -50,14 +48,12 @@ namespace LecturasJazz.API.Services
             try
             {
                 using var connection = new NpgsqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var command = new NpgsqlCommand(
-                    @"UPDATE ""Usuarios"" SET ""FotoUrl"" = @FotoUrl WHERE ""Id"" = @Id", connection);
+                using var command = new NpgsqlCommand("UPDATE \"Usuarios\" SET \"FotoUrl\" = @FotoUrl WHERE \"Id\" = @Id", connection);
 
                 command.Parameters.AddWithValue("@FotoUrl", rutaRelativa);
                 command.Parameters.AddWithValue("@Id", userId);
 
+                await connection.OpenAsync();
                 var result = await command.ExecuteNonQueryAsync();
                 return result > 0;
             }
@@ -73,17 +69,14 @@ namespace LecturasJazz.API.Services
             try
             {
                 using var connection = new NpgsqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var command = new NpgsqlCommand(@"SELECT * FROM ""Usuarios"" 
-                    WHERE ""Telefono"" = @Telefono", connection);
-
+                using var command = new NpgsqlCommand("SELECT * FROM \"Usuarios\" WHERE \"Telefono\" = @Telefono", connection);
                 command.Parameters.AddWithValue("@Telefono", telefono);
 
+                await connection.OpenAsync();
                 using var reader = await command.ExecuteReaderAsync();
                 if (await reader.ReadAsync())
                 {
-                    var usuario = new Usuario
+                    var user = new Usuario
                     {
                         Id = reader.GetInt32(reader.GetOrdinal("Id")),
                         Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
@@ -92,10 +85,10 @@ namespace LecturasJazz.API.Services
                         FotoUrl = reader.IsDBNull(reader.GetOrdinal("FotoUrl")) ? null : reader.GetString(reader.GetOrdinal("FotoUrl"))
                     };
 
-                    if (BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash))
+                    if (BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                     {
-                        string token = GenerarToken(usuario);
-                        return (usuario, token);
+                        var token = GenerarToken(user);
+                        return (user, token);
                     }
                 }
 
@@ -110,10 +103,7 @@ namespace LecturasJazz.API.Services
 
         private string GenerarToken(Usuario usuario)
         {
-            string key = _config["Jwt:Key"] ?? "clave-secreta-super-segura";
-            if (string.IsNullOrEmpty(key))
-                throw new Exception("⚠️ Jwt:Key no está configurado en el entorno");
-
+            var key = _config["Jwt:Key"] ?? "clave-secreta-super-segura";
             var keyBytes = Encoding.UTF8.GetBytes(key);
 
             var claims = new[]
@@ -124,7 +114,6 @@ namespace LecturasJazz.API.Services
             };
 
             var credentials = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha256);
-
             var tokenDescriptor = new JwtSecurityToken(
                 claims: claims,
                 expires: DateTime.UtcNow.AddDays(7),
