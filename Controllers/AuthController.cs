@@ -44,7 +44,7 @@ public class AuthController : ControllerBase
         {
             Nombre = request.Nombre,
             Telefono = request.Telefono,
-            PasswordHash = request.Password!,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password!), // ✅ Hasheo aquí
             FotoUrl = null
         };
 
@@ -52,7 +52,6 @@ public class AuthController : ControllerBase
         if (!creado)
             return StatusCode(500, new { message = "No se pudo registrar el usuario" });
 
-        // ✅ Intenta iniciar sesión directamente tras crear el usuario
         var (usuario, token) = await _authService.Login(request.Telefono!, request.Password!);
         if (usuario == null || token == null)
             return StatusCode(500, new { message = "Usuario creado, pero no se pudo generar token" });

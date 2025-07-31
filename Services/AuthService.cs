@@ -4,7 +4,6 @@ using Npgsql;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using BCrypt.Net;
 
 namespace LecturasJazz.API.Services
 {
@@ -26,15 +25,13 @@ namespace LecturasJazz.API.Services
                 using var connection = new NpgsqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(usuario.PasswordHash);
-
                 var command = new NpgsqlCommand(@"
                     INSERT INTO ""Usuarios"" (""Nombre"", ""Telefono"", ""PasswordHash"") 
                     VALUES (@Nombre, @Telefono, @PasswordHash)", connection);
 
                 command.Parameters.AddWithValue("@Nombre", usuario.Nombre);
                 command.Parameters.AddWithValue("@Telefono", usuario.Telefono);
-                command.Parameters.AddWithValue("@PasswordHash", hashedPassword);
+                command.Parameters.AddWithValue("@PasswordHash", usuario.PasswordHash); // ✅ Ya viene hasheado
 
                 var result = await command.ExecuteNonQueryAsync();
                 return result > 0;
