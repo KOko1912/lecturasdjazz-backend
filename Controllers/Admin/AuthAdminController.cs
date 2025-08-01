@@ -1,9 +1,10 @@
 using LecturasJazz.API.Data;
 using LecturasJazz.API.Models;
-
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace LecturasJazz.API.Controllers.Admin
 {
@@ -12,10 +13,12 @@ namespace LecturasJazz.API.Controllers.Admin
     public class AuthAdminController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _config;
 
-        public AuthAdminController(ApplicationDbContext context)
+        public AuthAdminController(ApplicationDbContext context, IConfiguration config)
         {
             _context = context;
+            _config = config;
         }
 
         [HttpPost("register")]
@@ -37,7 +40,7 @@ namespace LecturasJazz.API.Controllers.Admin
             _context.AdminUsers.Add(admin);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Administrador creado" });
+            return Ok(new { message = "Administrador creado correctamente" });
         }
 
         [HttpPost("login")]
@@ -55,13 +58,34 @@ namespace LecturasJazz.API.Controllers.Admin
                 return Unauthorized(new { message = "Credenciales inválidas" });
             }
 
+            // 🔐 Generar token
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]!);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim("id", admin.Id.ToString()),
+                    new Claim("rol", "admin")
+                }),
+                Expires = DateTime.UtcNow.AddHours(6),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+                Issuer = _config["Jwt:Issuer"],
+                Audience = _config["Jwt:Audience"]
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenString = tokenHandler.WriteToken(token);
+
             return Ok(new
             {
                 admin = new
                 {
                     admin.Id,
                     admin.Nombre
-                }
+                },
+                token = tokenString
             });
         }
     }
