@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "Gk9DsCUDsZg=",
+  "dgSpecHash": "ZSl1LXFUIGg=",
   "success": true,
   "projectFilePath": "E:\\LecturasDjazz123\\backend\\lecturasjazz.api\\LecturasJazz.API.csproj",
   "expectedPackageFiles": [
@@ -63,16 +63,5 @@
     "C:\\Users\\jose1\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.12\\microsoft.aspnetcore.app.ref.8.0.12.nupkg.sha512",
     "C:\\Users\\jose1\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.12\\microsoft.netcore.app.host.win-x64.8.0.12.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "LecturasJazz.API depende de Npgsql.EntityFrameworkCore.PostgreSQL (>= 8.0.3), pero no se encontró Npgsql.EntityFrameworkCore.PostgreSQL 8.0.3. Npgsql.EntityFrameworkCore.PostgreSQL 8.0.4 se resolvió en su lugar.",
-      "libraryId": "Npgsql.EntityFrameworkCore.PostgreSQL",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    }
-  ]
+  "logs": []
 }

@@ -2861,7 +2861,7 @@
       "Microsoft.EntityFrameworkCore.Design >= 8.0.5",
       "Microsoft.EntityFrameworkCore.Tools >= 8.0.5",
       "Npgsql >= 8.0.3",
-      "Npgsql.EntityFrameworkCore.PostgreSQL >= 8.0.3",
+      "Npgsql.EntityFrameworkCore.PostgreSQL >= 8.0.4",
       "Swashbuckle.AspNetCore >= 6.5.0"
     ]
   },
@@ -2940,7 +2940,7 @@
           },
           "Npgsql.EntityFrameworkCore.PostgreSQL": {
             "target": "Package",
-            "version": "[8.0.3, )"
+            "version": "[8.0.4, )"
           },
           "Swashbuckle.AspNetCore": {
             "target": "Package",
@@ -3416,17 +3416,5 @@
         }
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "LecturasJazz.API depende de Npgsql.EntityFrameworkCore.PostgreSQL (>= 8.0.3), pero no se encontró Npgsql.EntityFrameworkCore.PostgreSQL 8.0.3. Npgsql.EntityFrameworkCore.PostgreSQL 8.0.4 se resolvió en su lugar.",
-      "libraryId": "Npgsql.EntityFrameworkCore.PostgreSQL",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    }
-  ]
+  }
 }
