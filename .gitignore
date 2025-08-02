@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+publish/
+uploads/
+
+*.zip
+*.log
+*.user
+*.suo
+.env
+.env.*
+appsettings.Development.json

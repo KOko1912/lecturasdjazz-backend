@@ -1,0 +1,6 @@
+@LecturasJazz.API_HostAddress = import.meta.env.VITE_API_URL
+
+GET {{LecturasJazz.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
