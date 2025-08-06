@@ -1,0 +1,1 @@
+import{_ as e,c,a as o,d as r}from"./index-B07QE0eD.js";const t={};function s(a,n){return o(),c("div",null,n[0]||(n[0]=[r("h2",null,"Configuración Admin (en construcción)",-1)]))}const f=e(t,[["render",s]]);export{f as default};
